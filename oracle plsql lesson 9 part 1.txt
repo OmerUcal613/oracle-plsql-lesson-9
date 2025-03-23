@@ -1,0 +1,421 @@
+DROP TABLE employees CASCADE CONSTRAINTS;
+
+CREATE TABLE employees (
+    emp_id    NUMBER PRIMARY KEY,
+    emp_name  VARCHAR2(100),
+    salary    NUMBER(10, 2),
+    hire_date DATE
+);
+
+set serveroutput on;
+
+-- %TYPE İstifadəsi
+DECLARE
+    v_salary employees.salary%TYPE; -- salary ilə eyni tipdə dəyişən
+BEGIN
+    SELECT
+        salary
+    INTO v_salary
+    FROM
+        employees
+    WHERE
+        emp_id = 101; -- Mövcud bir işçi ID-si yazılmalıdır
+    dbms_output.put_line('Maaş: ' || v_salary);
+END;
+/
+
+SELECT
+    salary
+FROM
+    employees
+WHERE
+    emp_id = 101;
+
+
+-- %ROWTYPE İstifadəsi
+DECLARE
+    v_emp employees%rowtype; -- Bütün sətiri saxlaya bilən dəyişən
+BEGIN
+    SELECT
+        *
+    INTO v_emp
+    FROM
+        employees
+    WHERE
+        emp_id = 101; -- Mövcud bir işçi ID-si yazılmalıdır
+    dbms_output.put_line('ID: ' || v_emp.emp_id);
+    dbms_output.put_line('Ad: ' || v_emp.emp_name);
+    dbms_output.put_line('Maaş: ' || v_emp.salary);
+    dbms_output.put_line('İşə başlama tarixi: '
+                         || to_char(v_emp.hire_date, 'YYYY-MM-DD'));
+END;
+/
+
+SELECT
+    *
+FROM
+    employees
+WHERE
+    emp_id = 101;
+
+DROP TABLE departments;
+
+-- Bölmələr cədvəli
+CREATE TABLE departments (
+    dept_id   NUMBER PRIMARY KEY,
+    dept_name VARCHAR2(100)
+);
+
+DROP TABLE employees;
+
+-- İşçilər cədvəli
+CREATE TABLE employees (
+    emp_id    NUMBER PRIMARY KEY,
+    emp_name  VARCHAR2(100),
+    salary    NUMBER(10, 2),
+    hire_date DATE,
+    dept_id   NUMBER
+        REFERENCES departments ( dept_id )
+);
+
+INSERT INTO departments VALUES ( 1,
+                                 'IT' );
+
+INSERT INTO departments VALUES ( 2,
+                                 'HR' );
+
+INSERT INTO departments VALUES ( 3,
+                                 'Finance' );
+
+INSERT INTO employees VALUES ( 101,
+                               'Ali Veliyev',
+                               1200,
+                               TO_DATE('2022-05-10', 'YYYYMM-DD'),
+                               1 );
+
+INSERT INTO employees VALUES ( 102,
+                               'Leyla Mammadova',
+                               1500,
+                               TO_DATE('2021-08-15', 'YYYY-MM-DD'),
+                               2 );
+
+INSERT INTO employees VALUES ( 103,
+                               'Kamran Hasanov',
+                               1100,
+                               TO_DATE('2023-01-20', 'YYYY-MM-DD'),
+                               1 );
+
+COMMIT;
+
+SELECT
+    *
+FROM
+    departments;
+
+SELECT
+    *
+FROM
+    employees;
+
+
+-- %TYPE İstifadəsi - Dinamik Məlumat Tipi
+DECLARE
+    v_salary    employees.salary%TYPE; -- salary sütununun tipini götürür
+    v_dept_name departments.dept_name%TYPE; -- dept_name sütununun tipini götürür
+BEGIN
+-- İşçinin maaşını və bölməsinin adını tapırıq
+    SELECT
+        e.salary,
+        d.dept_name
+    INTO
+        v_salary,
+        v_dept_name
+    FROM
+             employees e
+        JOIN departments d ON e.dept_id = d.dept_id
+    WHERE
+        e.emp_id = 101;
+-- Nəticəni ekrana çıxarırıq
+    dbms_output.put_line('İşçinin maaşı: ' || v_salary);
+    dbms_output.put_line('Bölmə adı: ' || v_dept_name);
+END;
+/
+
+SELECT
+    *
+FROM
+    departments;
+
+SELECT
+    *
+FROM
+    employees;
+
+SELECT
+    e.salary,
+    d.dept_name
+FROM
+         employees e
+    JOIN departments d ON e.dept_id = d.dept_id
+WHERE
+    e.emp_id = 101;
+
+
+-- %ROWTYPE İstifadəsi - Bütün Sətiri Götürmək
+DECLARE
+    v_emp employees%rowtype; -- employees cədvəlindən tam sətir saxlayır
+BEGIN
+-- İşçinin məlumatlarını götür
+    SELECT
+        *
+    INTO v_emp
+    FROM
+        employees
+    WHERE
+        emp_id = 102;
+-- Məlumatları çap edirik
+    dbms_output.put_line('ID: ' || v_emp.emp_id);
+    dbms_output.put_line('Ad: ' || v_emp.emp_name);
+    dbms_output.put_line('Maaş: ' || v_emp.salary);
+    dbms_output.put_line('İşə başlama tarixi: '
+                         || to_char(v_emp.hire_date, 'YYYY-MM-DD'));
+    dbms_output.put_line('Bölmə ID: ' || v_emp.dept_id);
+END;
+/
+
+SELECT
+    *
+FROM
+    employees
+WHERE
+    emp_id = 102;
+
+
+-- %ROWTYPE və %TYPE Birlikdə İstifadə Edək
+DECLARE
+    v_emp        employees%rowtype; -- Bütün işçi məlumatlarını saxlayır
+    v_new_salary employees.salary%TYPE; -- Yeni maaş üçün dəyişən
+BEGIN
+-- İşçinin məlumatlarını götürək
+    SELECT
+        *
+    INTO v_emp
+    FROM
+        employees
+    WHERE
+        emp_id = 103;
+-- Yeni maaşı hesablayaq
+    v_new_salary := v_emp.salary * 1.10; -- 10% artım
+-- Məlumatları ekrana çıxaraq
+    dbms_output.put_line('İşçi: ' || v_emp.emp_name);
+    dbms_output.put_line('Köhnə maaş: ' || v_emp.salary);
+    dbms_output.put_line('Yeni maaş: ' || v_new_salary);
+-- Yenilənmiş maaşı bazaya yazaq
+    UPDATE employees
+    SET
+        salary = v_new_salary
+    WHERE
+        emp_id = v_emp.emp_id;
+
+    COMMIT;
+    dbms_output.put_line('Maaş yeniləndi.');
+END;
+/
+
+SELECT
+    *
+FROM
+    employees
+WHERE
+    emp_id = 103;
+
+
+-- Kursordan istifadə edərək %ROWTYPE tətbiqi
+DECLARE
+    CURSOR emp_cursor IS
+    SELECT
+        *
+    FROM
+        employees
+    WHERE
+        dept_id = 1; -- IT bölməsində işləyənlər
+    v_emp employees%rowtype; -- İşçi məlumatlarını saxlamaq üçün dəyişən
+BEGIN
+    OPEN emp_cursor; -- Kursoru açırıq
+    LOOP
+        FETCH emp_cursor INTO v_emp; -- Hər dəfə bir işçini götürürük
+        EXIT WHEN emp_cursor%notfound; -- Kursor bitəndə çıxış edirik
+-- Məlumatları ekrana çıxarırıq
+        dbms_output.put_line('İşçi: '
+                             || v_emp.emp_name
+                             || ', Maaş: '
+                             || v_emp.salary);
+
+    END LOOP;
+
+    CLOSE emp_cursor; -- Kursoru bağlayırıq
+END;
+/
+
+
+-- Funksiya yazmaq - İşçinin maaşına bonus əlavə etmək
+CREATE OR REPLACE FUNCTION calculate_bonus (
+    p_emp_id employees.emp_id%TYPE
+) RETURN NUMBER IS
+    v_emp        employees%rowtype; -- İşçi məlumatlarını saxlamaq üçün dəyişən
+    v_new_salary employees.salary%TYPE; -- Yeni maaş üçün dəyişən
+BEGIN
+-- İşçi məlumatlarını götürək
+    SELECT
+        *
+    INTO v_emp
+    FROM
+        employees
+    WHERE
+        emp_id = p_emp_id;
+-- Yeni maaşı hesablayırıq (Maaşa 15% bonus əlavə edirik)
+    v_new_salary := v_emp.salary * 1.15;
+    RETURN v_new_salary;
+END;
+/
+
+-- Necə istifadə etmək olar?
+SELECT
+    calculate_bonus(101)
+FROM
+    dual;
+
+SELECT
+    *
+FROM
+    employees;
+
+
+/*
+Prosedur yazmaq - İşçinin maaşını artırmaq və log yazmaq
+Bu prosedur işçinin maaşını artırır və bu artımı bir log cədvəlinə yazır.
+İlk öncə log cədvəli yaradaq:
+*/
+CREATE TABLE salary_log (
+    log_id      NUMBER
+        GENERATED ALWAYS AS IDENTITY
+    PRIMARY KEY,
+    emp_id      NUMBER,
+    old_salary  NUMBER(10, 2),
+    new_salary  NUMBER(10, 2),
+    change_date DATE DEFAULT sysdate
+);
+
+CREATE OR REPLACE PROCEDURE increase_salary (
+    p_emp_id  employees.emp_id%TYPE,
+    p_percent NUMBER
+) IS
+    v_emp        employees%rowtype; -- İşçi məlumatlarını saxlamaq üçün dəyişən
+    v_new_salary employees.salary%TYPE; -- Yeni maaş üçün dəyişən
+BEGIN
+-- İşçinin məlumatlarını götürək
+    SELECT
+        *
+    INTO v_emp
+    FROM
+        employees
+    WHERE
+        emp_id = p_emp_id;
+-- Yeni maaşı hesablayırıq
+    v_new_salary := v_emp.salary * ( 1 + p_percent / 100 );
+-- İşçinin maaşını yeniləyirik
+    UPDATE employees
+    SET
+        salary = v_new_salary
+    WHERE
+        emp_id = p_emp_id;
+-- Dəyişikliyi log cədvəlinə yazırıq
+    INSERT INTO salary_log (
+        emp_id,
+        old_salary,
+        new_salary
+    ) VALUES ( p_emp_id,
+               v_emp.salary,
+               v_new_salary );
+
+    COMMIT; -- Bütün dəyişiklikləri təsdiqləyirik
+    dbms_output.put_line('İşçinin maaşı uğurla artırıldı!');
+END;
+/
+
+-- Necə istifadə etmək olar?
+EXEC increase_salary(102, 10); -- 102 nömrəli işçinin maaşını 10% artır
+
+
+-- Trigger yazmaq - Maaş artırılanda avtomatik log yazmaq
+CREATE OR REPLACE TRIGGER trg_salary_update AFTER
+    UPDATE OF salary ON employees
+    FOR EACH ROW
+BEGIN
+-- Log cədvəlinə dəyişiklik yazırıq
+    INSERT INTO salary_log (
+        emp_id,
+        old_salary,
+        new_salary
+    ) VALUES ( :old.emp_id,
+               :old.salary,
+               :new.salary );
+
+    dbms_output.put_line('Maaş yeniləndi və loga yazıldı!');
+END;
+/
+
+-- Necə işləyir?
+UPDATE employees
+SET
+    salary = salary * 1.05
+WHERE
+    emp_id = 101;
+
+SELECT
+    *
+FROM
+    employees;
+
+SELECT
+    *
+FROM
+    salary_log;
+
+
+-- Kursor ilə bölmə üzrə maaşların cəmini tapmaq
+DECLARE
+    CURSOR dept_cursor IS
+    SELECT
+        dept_id
+    FROM
+        departments;
+
+    v_dept         departments.dept_id%TYPE;
+    v_total_salary employees.salary%TYPE;
+BEGIN
+    OPEN dept_cursor;
+    LOOP
+        FETCH dept_cursor INTO v_dept;
+        EXIT WHEN dept_cursor%notfound;
+-- Bölmə üzrə ümumi maaşı tapırıq
+        SELECT
+            nvl(
+                sum(salary),
+                0
+            )
+        INTO v_total_salary
+        FROM
+            employees
+        WHERE
+            dept_id = v_dept;
+-- Məlumatları çap edirik
+        dbms_output.put_line('Bölmə ID: '
+                             || v_dept
+                             || ', Ümumi maaş: '
+                             || v_total_salary);
+    END LOOP;
+
+    CLOSE dept_cursor;
+END;
+/
