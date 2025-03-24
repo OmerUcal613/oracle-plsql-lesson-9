@@ -1,0 +1,506 @@
+DROP TABLE departments CASCADE CONSTRAINTS;
+
+CREATE TABLE departments (
+    department_id   NUMBER PRIMARY KEY,
+    department_name VARCHAR2(50)
+);
+
+DROP TABLE employees CASCADE CONSTRAINTS;
+
+CREATE TABLE employees (
+    employee_id   NUMBER PRIMARY KEY,
+    first_name    VARCHAR2(50),
+    last_name     VARCHAR2(50),
+    department_id NUMBER,
+    salary        NUMBER,
+    CONSTRAINT fk_department FOREIGN KEY ( department_id )
+        REFERENCES departments ( department_id )
+);
+
+-- Data əlavə edək
+INSERT INTO departments (
+    department_id,
+    department_name
+) VALUES ( 1,
+           'HR' );
+
+INSERT INTO departments (
+    department_id,
+    department_name
+) VALUES ( 2,
+           'IT' );
+
+INSERT INTO employees (
+    employee_id,
+    first_name,
+    last_name,
+    department_id,
+    salary
+) VALUES ( 100,
+           'John',
+           'Doe',
+           1,
+           5000 );
+
+INSERT INTO employees (
+    employee_id,
+    first_name,
+    last_name,
+    department_id,
+    salary
+) VALUES ( 101,
+           'Jane',
+           'Smith',
+           2,
+           6000 );
+
+COMMIT;
+
+SELECT
+    *
+FROM
+    departments;
+
+SELECT
+    *
+FROM
+    employees;
+
+SET SERVEROUTPUT ON;
+
+-- %TYPE İstifadəsi
+DECLARE
+-- department_name sütununun tipini istifadə edirik
+    v_department_name departments.department_name%TYPE;
+BEGIN
+-- Cədvəldən məlumat oxuma
+    SELECT
+        department_name
+    INTO v_department_name
+    FROM
+        departments
+    WHERE
+        department_id = 1;
+-- Nəticəni ekrana yazdırırıq
+    dbms_output.put_line('Department Name: ' || v_department_name);
+END;
+/
+
+SELECT
+    department_name
+FROM
+    departments
+WHERE
+    department_id = 1;
+
+
+-- %ROWTYPE İstifadəsi
+DECLARE
+-- employees cədvəlinin tam bir sətirini saxlayacaq dəyişən
+    v_employee employees%rowtype;
+BEGIN
+-- employee_id = 100 olan bir işçini oxumaq
+    SELECT
+        *
+    INTO v_employee
+    FROM
+        employees
+    WHERE
+        employee_id = 100;
+-- Nəticəni ekrana yazdırmaq
+    dbms_output.put_line('Employee ID: ' || v_employee.employee_id);
+    dbms_output.put_line('First Name: ' || v_employee.first_name);
+    dbms_output.put_line('Last Name: ' || v_employee.last_name);
+    dbms_output.put_line('Department ID: ' || v_employee.department_id);
+    dbms_output.put_line('Salary: ' || v_employee.salary);
+END;
+/
+
+SELECT
+    *
+FROM
+    employees
+WHERE
+    employee_id = 100;
+
+DROP TABLE students;
+
+CREATE TABLE students (
+    student_id   NUMBER PRIMARY KEY,
+    student_name VARCHAR2(100),
+    dob          DATE
+);
+
+DROP TABLE courses;
+
+CREATE TABLE courses (
+    course_id       NUMBER PRIMARY KEY,
+    course_name     VARCHAR2(100),
+    course_duration NUMBER
+);
+
+DROP TABLE enrollments;
+
+CREATE TABLE enrollments (
+    enrollment_id   NUMBER PRIMARY KEY,
+    student_id      NUMBER,
+    course_id       NUMBER,
+    enrollment_date DATE,
+    CONSTRAINT fk_student FOREIGN KEY ( student_id )
+        REFERENCES students ( student_id ),
+    CONSTRAINT fk_course FOREIGN KEY ( course_id )
+        REFERENCES courses ( course_id )
+);
+
+-- Data əlavə edək
+INSERT INTO students (
+    student_id,
+    student_name,
+    dob
+) VALUES ( 1,
+           'Ali Məmmədov',
+           TO_DATE('2000-01-15', 'YYYY-MM-DD') );
+
+INSERT INTO students (
+    student_id,
+    student_name,
+    dob
+) VALUES ( 2,
+           'Nigar Əliyeva',
+           TO_DATE('1999-03-25', 'YYYY-MM-DD') );
+
+INSERT INTO courses (
+    course_id,
+    course_name,
+    course_duration
+) VALUES ( 101,
+           'SQL
+Fundamentals',
+           4 );
+
+INSERT INTO courses (
+    course_id,
+    course_name,
+    course_duration
+) VALUES ( 102,
+           'PL/SQL
+Programming',
+           6 );
+
+INSERT INTO enrollments (
+    enrollment_id,
+    student_id,
+    course_id,
+    enrollment_date
+) VALUES ( 1001,
+           1,
+           101,
+           TO_DATE('2025-02-01', 'YYYY-MM-DD') );
+
+INSERT INTO enrollments (
+    enrollment_id,
+    student_id,
+    course_id,
+    enrollment_date
+) VALUES ( 1002,
+           2,
+           102,
+           TO_DATE('2025-02-02', 'YYYY-MM-DD') );
+
+COMMIT;
+
+
+-- %TYPE İstifadəsi
+
+-- Nümunə 1: Tələbə adı və kurs adı
+DECLARE
+-- students cədvəlindən student_name sütununun tipini istifadə edirik
+    v_student_name students.student_name%TYPE;
+-- courses cədvəlindən course_name sütununun tipini istifadə edirik
+    v_course_name  courses.course_name%TYPE;
+BEGIN
+-- Tələbə məlumatını oxumaq
+    SELECT
+        student_name
+    INTO v_student_name
+    FROM
+        students
+    WHERE
+        student_id = 1;
+-- Kurs məlumatını oxumaq
+    SELECT
+        course_name
+    INTO v_course_name
+    FROM
+        courses
+    WHERE
+        course_id = 101;
+-- Nəticəni ekrana yazdırırıq
+    dbms_output.put_line('Student Name: ' || v_student_name);
+    dbms_output.put_line('Course Name: ' || v_course_name);
+END;
+/
+
+SELECT
+    student_name
+FROM
+    students
+WHERE
+    student_id = 1;
+
+SELECT
+    course_name
+FROM
+    courses
+WHERE
+    course_id = 101;
+
+
+-- %ROWTYPE İstifadəsi
+
+-- Nümunə 2: Tələbə məlumatları və qeydiyyat məlumatları
+DECLARE
+-- students cədvəlinin tam sətirini saxlayacaq dəyişən
+    v_student    students%rowtype;
+-- enrollments cədvəlinin tam sətirini saxlayacaq dəyişən
+    v_enrollment enrollments%rowtype;
+BEGIN
+-- student_id = 1 olan tələbənin məlumatını oxumaq
+    SELECT
+        *
+    INTO v_student
+    FROM
+        students
+    WHERE
+        student_id = 1;
+-- enrollment_id = 1001 olan qeydiyyatın məlumatını oxumaq
+    SELECT
+        *
+    INTO v_enrollment
+    FROM
+        enrollments
+    WHERE
+        enrollment_id = 1001;
+-- Tələbənin məlumatlarını ekrana yazdırmaq
+    dbms_output.put_line('Student ID: ' || v_student.student_id);
+    dbms_output.put_line('Student Name: ' || v_student.student_name);
+    dbms_output.put_line('Date of Birth: '
+                         || to_char(v_student.dob, 'YYYY-MM-DD'));
+-- Qeydiyyatın məlumatlarını ekrana yazdırmaq
+    dbms_output.put_line('Enrollment ID: ' || v_enrollment.enrollment_id);
+    dbms_output.put_line('Course ID: ' || v_enrollment.course_id);
+    dbms_output.put_line('Enrollment Date: '
+                         || to_char(v_enrollment.enrollment_date, 'YYYY-MM-DD'));
+END;
+/
+
+SELECT
+    *
+FROM
+    students
+WHERE
+    student_id = 1;
+
+SELECT
+    *
+FROM
+    enrollments
+WHERE
+    enrollment_id = 1001;
+
+DROP TABLE customers CASCADE CONSTRAINTS;
+
+CREATE TABLE customers (
+    customer_id    NUMBER PRIMARY KEY,
+    customer_name  VARCHAR2(100),
+    contact_number VARCHAR2(15)
+);
+
+DROP TABLE orders CASCADE CONSTRAINTS;
+
+CREATE TABLE orders (
+    order_id     NUMBER PRIMARY KEY,
+    customer_id  NUMBER,
+    order_date   DATE,
+    total_amount NUMBER,
+    CONSTRAINT fk_customer FOREIGN KEY ( customer_id )
+        REFERENCES customers ( customer_id )
+);
+
+DROP TABLE order_items CASCADE CONSTRAINTS;
+
+CREATE TABLE order_items (
+    order_item_id NUMBER PRIMARY KEY,
+    order_id      NUMBER,
+    product_name  VARCHAR2(100),
+    quantity      NUMBER,
+    price         NUMBER,
+    CONSTRAINT fk_order FOREIGN KEY ( order_id )
+        REFERENCES orders ( order_id )
+);
+
+-- Data əlavə edək
+INSERT INTO customers (
+    customer_id,
+    customer_name,
+    contact_number
+) VALUES ( 1,
+           'Rauf Əliyev',
+           '0501234567' );
+
+INSERT INTO customers (
+    customer_id,
+    customer_name,
+    contact_number
+) VALUES ( 2,
+           'Nigar Quliyeva',
+           '0512345678' );
+
+INSERT INTO orders (
+    order_id,
+    customer_id,
+    order_date,
+    total_amount
+) VALUES ( 1001,
+           1,
+           TO_DATE('2025-02-20', 'YYYY-MM-DD'),
+           1500 );
+
+INSERT INTO orders (
+    order_id,
+    customer_id,
+    order_date,
+    total_amount
+) VALUES ( 1002,
+           2,
+           TO_DATE('2025-02-21', 'YYYY-MM-DD'),
+           2000 );
+
+INSERT INTO order_items (
+    order_item_id,
+    order_id,
+    product_name,
+    quantity,
+    price
+) VALUES ( 1,
+           1001,
+           'Laptop',
+           1,
+           1000 );
+
+INSERT INTO order_items (
+    order_item_id,
+    order_id,
+    product_name,
+    quantity,
+    price
+) VALUES ( 2,
+           1001,
+           'Mouse',
+           2,
+           50 );
+
+INSERT INTO order_items (
+    order_item_id,
+    order_id,
+    product_name,
+    quantity,
+    price
+) VALUES ( 3,
+           1002,
+           'Smartphone',
+           1,
+           1500 );
+
+COMMIT;
+
+
+-- %TYPE İstifadəsi
+
+-- Nümunə 1: Sifarişin cəm məbləğini hesablamaq
+DECLARE
+-- total_amount sütununun tipini istifadə edirik
+    v_total_amount orders.total_amount%TYPE;
+-- Müvafiq sifarişin məlumatlarını saxlayacaq dəyişən
+    v_order_id     NUMBER := 1001;
+BEGIN
+-- Sifarişin total_amount məlumatını oxumaq
+    SELECT
+        total_amount
+    INTO v_total_amount
+    FROM
+        orders
+    WHERE
+        order_id = v_order_id;
+-- Nəticəni ekrana yazdırırıq
+    dbms_output.put_line('Total Amount for Order '
+                         || v_order_id
+                         || ': '
+                         || v_total_amount);
+END;
+/
+
+SELECT
+    total_amount
+FROM
+    orders
+WHERE
+    order_id = 1001;
+
+
+-- Nümunə 2: Müştəriyə aid sifarişlər və sifariş detalları
+DECLARE
+-- orders cədvəlinin tam sətirini saxlayacaq dəyişən
+    v_order       orders%rowtype;
+-- order_items cədvəlinin tam sətirini saxlayacaq dəyişən
+    v_order_item  order_items%rowtype;
+-- Müştərinin sifariş ID-si
+    v_customer_id NUMBER := 1;
+BEGIN
+-- Müştəriyə aid sifarişi oxumaq
+    SELECT
+        *
+    INTO v_order
+    FROM
+        orders
+    WHERE
+            customer_id = v_customer_id
+        AND ROWNUM = 1; -- 1-ci sifarişi alırıq
+-- Müştərinin sifarişinin detallarını oxumaq
+    SELECT
+        *
+    INTO v_order_item
+    FROM
+        order_items
+    WHERE
+            order_id = v_order.order_id
+        AND ROWNUM = 1; -- 1-ci məhsul detayı
+-- Nəticələri ekrana yazdırmaq
+    dbms_output.put_line('Order ID: ' || v_order.order_id);
+    dbms_output.put_line('Customer ID: ' || v_order.customer_id);
+    dbms_output.put_line('Order Date: '
+                         || to_char(v_order.order_date, 'YYYY-MM-DD'));
+    dbms_output.put_line('Total Amount: ' || v_order.total_amount);
+    dbms_output.put_line('Product Name: ' || v_order_item.product_name);
+    dbms_output.put_line('Quantity: ' || v_order_item.quantity);
+    dbms_output.put_line('Price: ' || v_order_item.price);
+END;
+/
+
+-- Müştəriyə aid sifarişi oxumaq
+SELECT
+    *
+FROM
+    orders
+WHERE
+        customer_id = 1
+    AND ROWNUM = 1; -- 1-ci sifarişi alırıq
+
+-- Müştərinin sifarişinin detallarını oxumaq
+SELECT
+    *
+FROM
+    order_items
+WHERE
+        order_id = 1001
+    AND ROWNUM = 1; -- 1-ci məhsul detayı
